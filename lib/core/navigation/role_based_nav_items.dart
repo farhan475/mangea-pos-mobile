@@ -13,6 +13,7 @@ class NavItemData {
 const List<NavItemData> kAdminNavItems = [
   NavItemData(icon: Icons.dashboard_rounded, label: 'Dashboard'),
   NavItemData(icon: Icons.restaurant_menu_rounded, label: 'Menu/POS'),
+  NavItemData(icon: Icons.edit_note_rounded, label: 'Kelola Menu'),
   NavItemData(icon: Icons.receipt_long_rounded, label: 'Orders'),
   NavItemData(icon: Icons.table_bar_rounded, label: 'Table'),
   NavItemData(icon: Icons.bar_chart_rounded, label: 'Reports'),

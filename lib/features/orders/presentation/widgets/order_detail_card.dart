@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../data/local/entities/order_entity.dart';
 import '../../../../shared_widgets/app_card.dart';
+import 'receipt_preview_dialog.dart';
 
 class OrderDetailCard extends StatelessWidget {
   final OrderEntity order;
@@ -114,6 +115,13 @@ class OrderDetailCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSizes.spacingSm),
+                  if (order.status == OrderStatusEntity.paid)
+                    IconButton(
+                      onPressed: () => _showReceiptPreview(context),
+                      icon: const Icon(Icons.print),
+                      color: AppColors.primary,
+                      tooltip: 'Cetak Struk',
+                    ),
                   IconButton(
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline),
@@ -251,5 +259,15 @@ class OrderDetailCard extends StatelessWidget {
       case OrderStatusEntity.cancelled:
         return order.status;
     }
+  }
+
+  void _showReceiptPreview(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => ReceiptPreviewDialog(
+        order: order,
+        items: order.items,
+      ),
+    );
   }
 }

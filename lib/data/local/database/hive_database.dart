@@ -34,8 +34,6 @@ class HiveDatabase {
     Hive.registerAdapter(ActivityTypeAdapter());
     Hive.registerAdapter(UserEntityAdapter());
     Hive.registerAdapter(UserRoleAdapter());
-    Hive.registerAdapter(UserEntityAdapter());
-    Hive.registerAdapter(UserRoleAdapter());
 
     // Open boxes
     await Hive.openBox<CategoryEntity>(categoriesBox);

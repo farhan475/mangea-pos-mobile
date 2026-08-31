@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/local/entities/user_entity.dart';
 import '../../features/activity_log/presentation/screens/activity_log_screen.dart';
+import '../../features/admin/presentation/screens/menu_management_screen.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -101,6 +102,8 @@ class _RootScreenState extends State<RootScreen> {
         return const DashboardScreen();
       case 'Menu/POS':
         return const PosScreen();
+      case 'Kelola Menu':
+        return const MenuManagementScreen();
       case 'Orders':
         return const OrdersScreen();
       case 'Table':

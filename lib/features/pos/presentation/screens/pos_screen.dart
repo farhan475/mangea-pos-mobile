@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../core/utils/currency_formatter.dart';
 import '../../../../data/local/database/hive_database.dart';
 import '../../../../data/local/entities/order_entity.dart';
 import '../../../../data/local/entities/product_entity.dart';
@@ -13,6 +12,7 @@ import '../../../../domain/models/menu_product_model.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../dashboard/presentation/bloc/order_bloc.dart';
+import '../../../orders/presentation/widgets/receipt_preview_dialog.dart';
 import '../../presentation/bloc/product_bloc.dart';
 import '../widgets/cart_panel.dart';
 import '../widgets/category_chip.dart';
@@ -167,21 +167,25 @@ class _PosScreenState extends State<PosScreen> {
 
     context.read<OrderBloc>().add(CreateOrder(order));
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Pembayaran berhasil! ${paymentMethod == PaymentMethod.cash ? "Kembalian: ${formatRupiah(changeAmount)}" : ""}',
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-
     // Clear cart
     setState(() {
       _cartItems.clear();
     });
+
+    // Show receipt preview dialog after a brief delay
+    if (mounted) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => ReceiptPreviewDialog(
+              order: order,
+              items: items,
+            ),
+          );
+        }
+      });
+    }
   }
 
   @override
