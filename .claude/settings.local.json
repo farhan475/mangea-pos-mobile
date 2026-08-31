@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter doctor *)",
+      "Bash(flutter devices *)",
+      "Bash(flutter pub *)",
+      "Bash(flutter run *)",
+      "Bash(flutter emulators *)",
+      "Bash(adb devices *)"
+    ]
+  }
+}
