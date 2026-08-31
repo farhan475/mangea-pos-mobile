@@ -34,11 +34,20 @@ class ReportRepositoryImpl implements ReportRepository {
     
     double totalRevenue = 0;
     double totalTax = 0;
-    
+
     for (var order in dayOrders) {
       if (order.status == OrderStatusEntity.paid) {
         totalRevenue += order.totalAmount;
-        totalTax += order.totalAmount * 0.1; // Assuming 10% tax
+        // Tax stored on the order if present; totals are tax-inclusive
+        // (total = subtotal * 1.1), mirroring the backend report convention.
+        if (order.items.isNotEmpty) {
+          final subtotal = order.items.fold<double>(
+              0, (sum, item) => sum + item.subtotal);
+          totalTax += order.totalAmount - subtotal;
+        } else {
+          // Fallback: extract 10% from the tax-inclusive total
+          totalTax += order.totalAmount - (order.totalAmount / 1.1);
+        }
       }
     }
     

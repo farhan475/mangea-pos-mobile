@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -9,8 +12,17 @@ import '../domain/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   static const String _currentUserIdKey = 'current_user_id';
+  static const String _pepper = 'mangea.local.auth.v1';
   final _uuid = const Uuid();
   final AuthApiService _authApiService = AuthApiService(DioClient());
+
+  /// Local passwords are stored as salted SHA-256 digests, never plaintext.
+  /// (The backend independently stores bcrypt hashes; this hash is only for
+  /// the offline Hive cache.)
+  String _hashPassword(String userId, String password) {
+    final bytes = utf8.encode('$_pepper:$userId:$password');
+    return sha256.convert(bytes).toString();
+  }
 
   @override
   Future<UserEntity?> login(String username, String password) async {
@@ -20,10 +32,20 @@ class AuthRepositoryImpl implements AuthRepository {
       final userJson = data['user'] as Map<String, dynamic>? ?? data;
       final user = AuthApiService.mapToUserEntity(userJson);
 
+      // Persist JWT for authenticated API calls
+      final token = data['token'] as String?;
+      if (token != null && token.isNotEmpty) {
+        await DioClient.storeToken(token);
+      }
+
       // Cache user in Hive for offline use
       final usersBox = HiveDatabase.usersBoxInstance;
       final existing = usersBox.values.where((u) => u.id == user.id);
       if (existing.isEmpty) {
+        // Keep an unusable password marker: this user must log in online
+        // until a password is set locally.
+        user.password = 'oauth-cached:${_uuid.v4()}';
+        user.lastLoginAt = DateTime.now();
         await usersBox.put(user.id, user);
       } else {
         final localUser = existing.first;
@@ -51,8 +73,15 @@ class AuthRepositoryImpl implements AuthRepository {
         (u) => u.username == username,
         orElse: () => throw Exception('User not found'),
       );
-      if (user.password != password) throw Exception('Invalid password');
+      final hashed = _hashPassword(user.id, password);
+      final matches = user.password == hashed || user.password == password;
+      if (!matches) throw Exception('Invalid password');
       if (!user.isActive) throw Exception('User account is deactivated');
+
+      // Migrate legacy plaintext entries to hashed form
+      if (user.password != hashed) {
+        user.password = hashed;
+      }
 
       user.lastLoginAt = DateTime.now();
       await user.save();
@@ -67,6 +96,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> logout() async {
+    await DioClient.clearToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_currentUserIdKey);
   }
@@ -136,12 +166,13 @@ class AuthRepositoryImpl implements AuthRepository {
     final user = UserEntity(
       id: _uuid.v4(),
       username: username,
-      password: password,
+      password: '',
       name: name,
       role: role,
       isActive: true,
       createdAt: DateTime.now(),
     );
+    user.password = _hashPassword(user.id, password);
 
     await usersBox.put(user.id, user);
     return user;
@@ -197,7 +228,7 @@ class AuthRepositoryImpl implements AuthRepository {
       (u) => u.id == userId,
       orElse: () => throw Exception('User not found'),
     );
-    user.password = newPassword;
+    user.password = _hashPassword(user.id, newPassword);
     await user.save();
   }
 

@@ -21,8 +21,9 @@ class DailyReportModel extends Equatable {
     required this.hourlySales,
   });
 
+  /// Average spend per *paid* order — cancelled orders must not dilute it.
   double get averageOrderValue =>
-      totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      completedOrders > 0 ? totalRevenue / completedOrders : 0;
 
   double get completionRate =>
       totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;

@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import '../../../data/local/database/hive_database.dart';
 import '../../../data/local/entities/product_entity.dart';
 
@@ -23,8 +25,10 @@ class StockRepository {
   /// Update product stock
   Future<void> updateStock(String productId, int newStock) async {
     final box = HiveDatabase.productsBoxInstance;
-    final product = box.values.firstWhere((p) => p.id == productId);
-    
+    final product = box.values
+        .firstWhereOrNull((p) => p.id == productId);
+    if (product == null) throw Exception('Product not found: $productId');
+
     product.setStock(newStock);
     await product.save();
   }
@@ -32,8 +36,10 @@ class StockRepository {
   /// Add stock to product
   Future<void> addStock(String productId, int quantity) async {
     final box = HiveDatabase.productsBoxInstance;
-    final product = box.values.firstWhere((p) => p.id == productId);
-    
+    final product = box.values
+        .firstWhereOrNull((p) => p.id == productId);
+    if (product == null) throw Exception('Product not found: $productId');
+
     product.addStock(quantity);
     await product.save();
   }
@@ -41,8 +47,10 @@ class StockRepository {
   /// Reduce stock from product (called when order is completed)
   Future<bool> reduceStock(String productId, int quantity) async {
     final box = HiveDatabase.productsBoxInstance;
-    final product = box.values.firstWhere((p) => p.id == productId);
-    
+    final product = box.values
+        .firstWhereOrNull((p) => p.id == productId);
+    if (product == null) return false;
+
     // Check if stock is sufficient
     if (product.stock < quantity) {
       return false;
@@ -57,17 +65,20 @@ class StockRepository {
   Future<bool> reduceStockBatch(Map<String, int> productQuantities) async {
     final box = HiveDatabase.productsBoxInstance;
     
-    // First, check if all products have sufficient stock
+    // First, verify all products exist and have sufficient stock
+    final products = <String, ProductEntity>{};
     for (final entry in productQuantities.entries) {
-      final product = box.values.firstWhere((p) => p.id == entry.key);
-      if (product.stock < entry.value) {
+      final product = box.values
+          .firstWhereOrNull((p) => p.id == entry.key);
+      if (product == null || product.stock < entry.value) {
         return false;
       }
+      products[entry.key] = product;
     }
     
     // If all checks pass, reduce stock
     for (final entry in productQuantities.entries) {
-      final product = box.values.firstWhere((p) => p.id == entry.key);
+      final product = products[entry.key]!;
       product.reduceStock(entry.value);
       await product.save();
     }
@@ -78,7 +89,9 @@ class StockRepository {
   /// Update low stock threshold for a product
   Future<void> updateLowStockThreshold(String productId, int threshold) async {
     final box = HiveDatabase.productsBoxInstance;
-    final product = box.values.firstWhere((p) => p.id == productId);
+    final product = box.values
+        .firstWhereOrNull((p) => p.id == productId);
+    if (product == null) throw Exception('Product not found: $productId');
     
     product.lowStockThreshold = threshold;
     await product.save();

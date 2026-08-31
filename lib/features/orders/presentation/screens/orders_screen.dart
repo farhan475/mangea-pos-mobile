@@ -269,9 +269,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
     OrderEntity order,
     OrderStatusEntity newStatus,
   ) {
-    order.status = newStatus;
-    order.updatedAt = DateTime.now();
-    context.read<OrderBloc>().add(UpdateOrder(order));
+    // Build a new entity instead of mutating the state object in place —
+    // mutating before the bloc commits leaves the UI inconsistent if the
+    // update fails, and breaks Equatable change detection.
+    final updated = order.copyWith(
+      status: newStatus,
+      updatedAt: DateTime.now(),
+    );
+    context.read<OrderBloc>().add(UpdateOrder(updated));
   }
 
   void _deleteOrder(BuildContext context, OrderEntity order) {

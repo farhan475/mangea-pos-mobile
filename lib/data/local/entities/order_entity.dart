@@ -93,6 +93,38 @@ class OrderEntity extends HiveObject {
     this.changeAmount,
   });
 
+  OrderEntity copyWith({
+    String? id,
+    String? userId,
+    String? customerName,
+    String? tableNumber,
+    double? totalAmount,
+    OrderStatusEntity? status,
+    SyncStatus? syncStatus,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<OrderItemEntity>? items,
+    PaymentMethod? paymentMethod,
+    double? paidAmount,
+    double? changeAmount,
+  }) {
+    return OrderEntity(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      customerName: customerName ?? this.customerName,
+      tableNumber: tableNumber ?? this.tableNumber,
+      totalAmount: totalAmount ?? this.totalAmount,
+      status: status ?? this.status,
+      syncStatus: syncStatus ?? this.syncStatus,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      items: items ?? this.items,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paidAmount: paidAmount ?? this.paidAmount,
+      changeAmount: changeAmount ?? this.changeAmount,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

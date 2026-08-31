@@ -20,6 +20,7 @@ import 'features/auth/data/auth_repository_impl.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/dashboard/presentation/bloc/order_bloc.dart';
+import 'features/inventory/data/stock_repository.dart';
 import 'features/pos/presentation/bloc/product_bloc.dart';
 import 'features/reports/data/report_repository_impl.dart';
 import 'features/reports/presentation/bloc/report_bloc.dart';
@@ -95,6 +96,7 @@ class _MangeaAppState extends State<MangeaApp> {
           create: (context) => OrderBloc(
             orderRepository,
             activityLogService: activityLogService,
+            stockRepository: StockRepository(),
           )..add(LoadTodayOrders()),
         ),
         BlocProvider(

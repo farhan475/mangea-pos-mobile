@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/activity_log_service.dart';
 import '../../../../data/local/entities/order_entity.dart';
 import '../../../../domain/repository_interfaces/order_repository.dart';
+import '../../../inventory/data/stock_repository.dart';
 
 part 'order_event.dart';
 part 'order_state.dart';
@@ -11,9 +12,14 @@ part 'order_state.dart';
 class OrderBloc extends Bloc<OrderEvent, OrderState> {
   final OrderRepository _orderRepository;
   final ActivityLogService? _activityLogService;
+  final StockRepository? _stockRepository;
 
-  OrderBloc(this._orderRepository, {ActivityLogService? activityLogService})
-      : _activityLogService = activityLogService,
+  OrderBloc(
+    this._orderRepository, {
+    ActivityLogService? activityLogService,
+    StockRepository? stockRepository,
+  })  : _activityLogService = activityLogService,
+        _stockRepository = stockRepository,
         super(OrderInitial()) {
     on<LoadOrders>(_onLoadOrders);
     on<CreateOrder>(_onCreateOrder);
@@ -63,7 +69,14 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     try {
       // Get old order for comparison
       final oldOrder = await _orderRepository.getOrderById(event.order.id);
-      
+
+      // Reduce product stock once, when the order transitions to paid
+      final wasPaid = oldOrder?.status == OrderStatusEntity.paid;
+      final isNowPaid = event.order.status == OrderStatusEntity.paid;
+      if (!wasPaid && isNowPaid) {
+        await _reduceStockForOrder(event.order);
+      }
+
       await _orderRepository.updateOrder(event.order);
       
       // Log activity if status changed
@@ -79,6 +92,20 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       add(LoadOrders());
     } catch (e) {
       emit(OrderError(e.toString()));
+    }
+  }
+
+  /// Decrements stock for every item in the order. Stock failures don't block
+  /// the order update — the backend enforces the authoritative check on sync.
+  Future<void> _reduceStockForOrder(OrderEntity order) async {
+    final quantities = <String, int>{};
+    for (final item in order.items) {
+      quantities[item.productId] = (quantities[item.productId] ?? 0) + item.quantity;
+    }
+    try {
+      await _stockRepository?.reduceStockBatch(quantities);
+    } catch (_) {
+      // Stock sync is best-effort locally; server remains source of truth.
     }
   }
 

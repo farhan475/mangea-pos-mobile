@@ -55,6 +55,12 @@ dependencies:
   # UUID Generation
   uuid: ^4.2.2
 
+  # Password hashing (local offline auth)
+  crypto: ^3.0.3
+
+  # Collection utilities (firstWhereOrNull)
+  collection: ^1.18.0
+
   # Date & Time
   intl: ^0.20.2
 
